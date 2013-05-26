@@ -1,5 +1,9 @@
 # Users and Groups chef cookbook.
 
+## Note
+This cookbooks is not fully tested so make sure you verify it works
+for you!
+
 ## Description:
 
 A cookbook to help populate users and groups from data bags. It
