@@ -40,63 +40,71 @@ ruby_shadow_package = value_for_platform(
 
 package ruby_shadow_package if ruby_shadow_package
 
+groupsdb = node[:users_and_groups][:groups_databag]
+usersdb  = node[:users_and_groups][:users_databag]
+
 # First we define the groups
-data_bag(node[:users_and_groups][:groups_databag]).each do |g|
-  if not_on_this_node? g
+data_bag(groupsdb).each do |g|
+  grp = node.users_and_groups.encrypted_data_bag ?
+        Chef::EncryptedDataBagItem.load(groupsdb, g) :
+        data_bag_item(groupsdb, g)
+
+  if not_on_this_node? grp
     next
   end
 
-  group g['id'] do
-    gid g['gid'] if g['gid']
+  group grp['id'] do
+    gid grp['gid'] if grp['gid']
   end
 end
 
-data_bag(node[:users_and_groups][:users_databag]).each do |u|
-  u = Chef::EncryptedDataBagItem.load('users', u) if
-      node.users_and_groups.encrypted_data_bag
+data_bag(usersdb).each do |u|
+  usr = node.users_and_groups.encrypted_data_bag ?
+        Chef::EncryptedDataBagItem.load(usersdb, u) :
+        data_bag_item(usersdb, u)
 
-  if not_on_this_node? u
+  if not_on_this_node? usr
     next
   end
 
-  homedir = u['home'] || "/home/#{u['id']}"
+  homedir = usr['home'] || "/home/#{usr['id']}"
 
-  user u['id'] do
-    uid u['uid'] if u['uid']
-    gid u['gid'] if u['gid']
-    password u['shadow'] if u['shadow']
-    comment u['comment'] if u['comment']
-    shell u['shell'] if u['shell']
+  user usr['id'] do
+    uid usr['uid'] if usr['uid']
+    gid usr['gid'] if usr['gid']
+    password usr['shadow'] if usr['shadow']
+    comment usr['comment'] if usr['comment']
+    shell usr['shell'] if usr['shell']
     home homedir
     supports :manage_home => true
   end
 
   # add user to the required groups
-  u['groups'].each do |g|
+  usr['groups'].each do |g|
     group g do
       action :modify
       append true
-      members u['id']
+      members usr['id']
     end
-  end if u['groups']
+  end if usr['groups']
 
   # TODO: this is a hack trying to guess the group. need to improve!
-  groupname = u['gid'] || u['id']
+  groupname = usr['gid'] || usr['id']
 
   # ssh keys
-  if u['sshpubkey']
+  if usr['sshpubkey']
     directory File.join(homedir, '.ssh') do
-      owner u['id']
+      owner usr['id']
       group groupname
       mode "0700"
     end
 
     template File.join(homedir, '.ssh', 'authorized_keys') do
-      owner u['id']
+      owner usr['id']
       group groupname
       mode "0600"
       source "authorized_keys.erb"
-      variables :keys => u['sshpubkey']
+      variables :keys => usr['sshpubkey']
     end
   end
 end
