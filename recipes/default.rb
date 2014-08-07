@@ -25,21 +25,6 @@ def not_on_this_node?(item)
   item['only_in'] && (Array(item['only_in']) & node.roles).empty?
 end
 
-# ruby shadow is reqruired to setup passwords.
-# TODO: Find a better way to differenticate between embedded chef and
-# chef installed on system ruby.
-ruby_shadow_package = value_for_platform(
-  ["debian", "ubuntu"] => {
-    "default" => "libshadow-ruby1.8",
-    "12.04" => false
-  },
-  ["centos", "redhat", "fedora"] => {
-    "default" => "ruby-shadow"
-  }
-)
-
-package ruby_shadow_package if ruby_shadow_package
-
 # First we define the groups
 data_bag(node[:users_and_groups][:groups_databag]).each do |g|
   if not_on_this_node? g

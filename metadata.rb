@@ -5,5 +5,5 @@ license          "GPL v3"
 description      "Defines users and groups on a computer. See documentation!"
 supports         "ubuntu"
 supports         "centos"
-version          "0.1.1"
+version          "0.1.3"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
